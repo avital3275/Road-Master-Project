@@ -1,10 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const express          = require('express');
+const router           = express.Router();
 const theoryController = require('../controllers/theoryController');
-const authMiddleware = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
-const multer = require('multer');
-const path = require('path');
+const authMiddleware   = require('../middleware/authMiddleware');
+const roleMiddleware   = require('../middleware/roleMiddleware');
+const multer           = require('multer');
+const path             = require('path');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -18,17 +18,31 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 2 * 1024 * 1024 }, 
+    limits: { fileSize: 2 * 1024 * 1024 },
 });
 
-router.get('/exam', authMiddleware, theoryController.getExam);
+// GET /api/theory/exam
+router.get('/exam',            authMiddleware,                            theoryController.getExam);
 
-router.post('/exam', authMiddleware, roleMiddleware(['student']), theoryController.submitExam);
+// POST /api/theory/exam
+router.post('/exam',           authMiddleware, roleMiddleware(['student']), theoryController.submitExam);
 
-router.get('/history', authMiddleware, roleMiddleware(['student']), theoryController.getHistory);
+// GET /api/theory/history
+router.get('/history',         authMiddleware, roleMiddleware(['student']), theoryController.getHistory);
 
-router.post('/question', authMiddleware, roleMiddleware(['teacher']), upload.single('image'), theoryController.addQuestion);
+// ✅ חדש — GET /api/theory/history/:studentId (למורה)
+router.get('/history/:studentId', authMiddleware, roleMiddleware(['teacher']), theoryController.getStudentHistory);
 
+// ✅ חדש — GET /api/theory/signs
+router.get('/signs',           authMiddleware, theoryController.getSigns);
+
+// ✅ חדש — GET /api/theory/questions
+router.get('/questions',       authMiddleware, roleMiddleware(['teacher']), theoryController.getQuestions);
+
+// POST /api/theory/question
+router.post('/question',       authMiddleware, roleMiddleware(['teacher']), upload.single('image'), theoryController.addQuestion);
+
+// DELETE /api/theory/question/:id
 router.delete('/question/:id', authMiddleware, roleMiddleware(['teacher']), theoryController.deleteQuestion);
 
 module.exports = router;

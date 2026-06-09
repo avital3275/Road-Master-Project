@@ -3,7 +3,7 @@ const db = require('../config/db');
 const testResultModel = {
 
     save: async (student_id, score, total) => {
-        const passed = score >= total * 0.72; // עובר ב-72%
+        const passed = score >= 26;
         const [result] = await db.query(
             'INSERT INTO test_results (student_id, score, total, passed) VALUES (?, ?, ?, ?)',
             [student_id, score, total, passed]

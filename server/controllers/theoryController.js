@@ -21,7 +21,7 @@ const theoryController = {
 
         try {
             const resultId = await testResultModel.save(student_id, score, total);
-            const passed = score >= total * 0.72;
+            const passed = score >= 26;
 
             res.status(201).json({
                 message: passed ? 'כל הכבוד, עברת!' : 'לא עברת, נסה שוב!',
@@ -44,7 +44,7 @@ const theoryController = {
             const newId = await questionModel.create(
                 question_text, image_path,
                 option_a, option_b, option_c, option_d,
-                correct_answer,license_type
+                correct_answer, license_type
             );
             res.status(201).json({ message: 'השאלה נוספה בהצלחה!', questionId: newId });
 
@@ -72,6 +72,37 @@ const theoryController = {
             const history = await testResultModel.findByStudent(student_id);
             res.status(200).json(history);
 
+        } catch (err) {
+            res.status(500).json({ message: 'שגיאת שרת', error: err.message });
+        }
+    },
+    // ✅ חדש — שליפת תמרורים ללמידה
+    getSigns: async (req, res) => {
+        try {
+            const signs = await questionModel.getAll(req.user.license_type);
+            res.status(200).json(signs);
+        } catch (err) {
+            res.status(500).json({ message: 'שגיאת שרת', error: err.message });
+        }
+    },
+
+    // ✅ חדש — שליפת כל השאלות (למורה)
+    getQuestions: async (req, res) => {
+        const license_type = req.query.license || null;
+        try {
+            const questions = await questionModel.getAll(license_type);
+            res.status(200).json(questions);
+        } catch (err) {
+            res.status(500).json({ message: 'שגיאת שרת', error: err.message });
+        }
+    },
+
+    // ✅ חדש — היסטוריית מבחנים של תלמיד ספציפי (למורה)
+    getStudentHistory: async (req, res) => {
+        const { studentId } = req.params;
+        try {
+            const history = await testResultModel.findByStudent(studentId);
+            res.status(200).json(history);
         } catch (err) {
             res.status(500).json({ message: 'שגיאת שרת', error: err.message });
         }

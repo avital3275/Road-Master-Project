@@ -9,21 +9,26 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationCode = async (email, code) => {
-    await transporter.sendMail({
-        from:    `"RoadMaster" <${process.env.GMAIL_USER}>`,
-        to:      email,
-        subject: 'קוד אימות - RoadMaster',
-        html: `
-            <div style="font-family: Arial; text-align: center; padding: 20px;">
-                <h2>ברוך הבא ל־RoadMaster!</h2>
-                <p>קוד האימות שלך הוא:</p>
-                <h1 style="color: #2563eb; font-size: 40px; letter-spacing: 8px;">
-                    ${code}
-                </h1>
-                <p>הקוד תקף למשך <strong>דקה אחת</strong> בלבד.</p>
-            </div>
-        `,
-    });
+    try {
+        await transporter.sendMail({
+            from:    `"RoadMaster" <${process.env.GMAIL_USER}>`,
+            to:      email,
+            subject: 'קוד אימות - RoadMaster',
+            html: `
+                <div style="font-family: Arial; text-align: center; padding: 20px;">
+                    <h2>ברוך הבא ל־RoadMaster!</h2>
+                    <p>קוד האימות שלך הוא:</p>
+                    <h1 style="color: #2563eb; font-size: 40px; letter-spacing: 8px;">
+                        ${code}
+                    </h1>
+                    <p>הקוד תקף למשך <strong>דקה אחת</strong> בלבד.</p>
+                </div>
+            `,
+        });
+    } catch (err) {
+        console.log('❌ שגיאת מייל:', err.message);
+        throw err;
+    }
 };
 
 module.exports = { sendVerificationCode };

@@ -1,4 +1,5 @@
-const db = require('../config/db');
+const db                    = require('../config/db');
+const { toMysqlDate }       = require('../utils/dateHelper');
 
 const lessonModel = {
 
@@ -29,7 +30,7 @@ const lessonModel = {
     create: async (teacher_id, student_id, lesson_date) => {
         const [result] = await db.query(
             'INSERT INTO lessons (teacher_id, student_id, lesson_date) VALUES (?, ?, ?)',
-            [teacher_id, student_id, lesson_date]
+            [teacher_id, student_id, toMysqlDate(lesson_date)]
         );
         return result.insertId;
     },
@@ -42,6 +43,7 @@ const lessonModel = {
     },
 
     bookLesson: async (teacher_id, student_id, lesson_date) => {
+        const mysqlDate  = toMysqlDate(lesson_date);
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
@@ -50,7 +52,7 @@ const lessonModel = {
                 `SELECT id FROM lessons 
                  WHERE teacher_id = ? AND lesson_date = ? 
                  AND status = "scheduled" FOR UPDATE`,
-                [teacher_id, lesson_date]
+                [teacher_id, mysqlDate]
             );
 
             if (existing.length > 0) {
@@ -60,7 +62,7 @@ const lessonModel = {
 
             const [result] = await connection.query(
                 'INSERT INTO lessons (teacher_id, student_id, lesson_date) VALUES (?, ?, ?)',
-                [teacher_id, student_id, lesson_date]
+                [teacher_id, student_id, mysqlDate]
             );
 
             await connection.commit();
@@ -72,6 +74,39 @@ const lessonModel = {
         } finally {
             connection.release();
         }
+    },
+
+    getSlotsByTeacher: async (teacher_id) => {
+        const [rows] = await db.query(
+            `SELECT * FROM available_slots 
+             WHERE teacher_id = ? AND is_booked = FALSE
+             ORDER BY slot_date ASC`,
+            [teacher_id]
+        );
+        return rows;
+    },
+
+    addSlot: async (teacher_id, slot_date) => {
+        const mysqlDate = toMysqlDate(slot_date);
+
+        const [existing] = await db.query(
+            'SELECT id FROM available_slots WHERE teacher_id = ? AND slot_date = ?',
+            [teacher_id, mysqlDate]
+        );
+
+        if (existing.length > 0) {
+            return existing[0];
+        }
+
+        const [result] = await db.query(
+            'INSERT INTO available_slots (teacher_id, slot_date) VALUES (?, ?)',
+            [teacher_id, mysqlDate]
+        );
+        const [rows] = await db.query(
+            'SELECT * FROM available_slots WHERE id = ?',
+            [result.insertId]
+        );
+        return rows[0];
     },
 };
 

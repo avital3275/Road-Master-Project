@@ -1,16 +1,14 @@
-
 CREATE DATABASE IF NOT EXISTS roadmaster;
 USE roadmaster;
 
 CREATE TABLE users (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    full_name   VARCHAR(100)  NOT NULL,
-    email       VARCHAR(100)  NOT NULL UNIQUE,
-    password    VARCHAR(255)  NOT NULL,
-    role        ENUM('student', 'teacher') NOT NULL,
-    license_type ENUM('A', 'B', 'C', 'D') DEFAULT 'B', 
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    full_name    VARCHAR(100)  NOT NULL,
+    email        VARCHAR(100)  NOT NULL UNIQUE,
+    password     VARCHAR(255)  NOT NULL,
+    role         ENUM('student', 'teacher') NOT NULL,
+    license_type VARCHAR(255)  DEFAULT 'B', 
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE lessons (
@@ -21,7 +19,6 @@ CREATE TABLE lessons (
     status       ENUM('scheduled', 'completed', 'cancelled') DEFAULT 'scheduled',
     notes        TEXT,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (teacher_id) REFERENCES users(id),
     FOREIGN KEY (student_id) REFERENCES users(id)
 );
@@ -46,7 +43,6 @@ CREATE TABLE test_results (
     total       INT NOT NULL,
     passed      BOOLEAN NOT NULL,
     taken_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (student_id) REFERENCES users(id)
 );
 
@@ -55,6 +51,5 @@ CREATE TABLE available_slots (
     teacher_id  INT NOT NULL,
     slot_date   DATETIME NOT NULL,
     is_booked   BOOLEAN DEFAULT FALSE,
-
     FOREIGN KEY (teacher_id) REFERENCES users(id)
 );

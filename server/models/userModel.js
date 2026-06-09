@@ -25,6 +25,27 @@ const userModel = {
         );
         return result.insertId;
     },
+
+    // ✅ חדש — שליפת כל המורים
+    findByRole: async (role) => {
+        const [rows] = await db.query(
+            'SELECT id, full_name, email, role, license_type FROM users WHERE role = ?',
+            [role]
+        );
+        return rows;
+    },
+
+    // ✅ חדש — שליפת תלמידים שיש להם שיעור עם המורה
+    findMyStudents: async (teacher_id) => {
+        const [rows] = await db.query(
+            `SELECT DISTINCT u.id, u.full_name, u.email, u.license_type
+             FROM users u
+             JOIN lessons l ON l.student_id = u.id
+             WHERE l.teacher_id = ?`,
+            [teacher_id]
+        );
+        return rows;
+    },
 };
 
 module.exports = userModel;
