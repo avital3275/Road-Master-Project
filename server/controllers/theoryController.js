@@ -76,7 +76,7 @@ const theoryController = {
             res.status(500).json({ message: 'שגיאת שרת', error: err.message });
         }
     },
-    // ✅ חדש — שליפת תמרורים ללמידה
+
     getSigns: async (req, res) => {
         try {
             const signs = await questionModel.getAll(req.user.license_type);
@@ -86,7 +86,6 @@ const theoryController = {
         }
     },
 
-    // ✅ חדש — שליפת כל השאלות (למורה)
     getQuestions: async (req, res) => {
         const license_type = req.query.license || null;
         try {
@@ -97,7 +96,6 @@ const theoryController = {
         }
     },
 
-    // ✅ חדש — היסטוריית מבחנים של תלמיד ספציפי (למורה)
     getStudentHistory: async (req, res) => {
         const { studentId } = req.params;
         try {

@@ -48,7 +48,6 @@ const Login = () => {
         <div className="auth-container">
             <div className="auth-card">
 
-                {/* ✅ לוגו מעודכן */}
                 <div className="auth-logo">
                     <img src="/logo.png" alt="RoadMaster" style={{
                         width: '52px',

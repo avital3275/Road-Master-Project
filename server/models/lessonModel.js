@@ -1,14 +1,14 @@
-const db                    = require('../config/db');
-const { toMysqlDate }       = require('../utils/dateHelper');
+const db = require('../config/db');
+const { toMysqlDate } = require('../utils/dateHelper');
 
 const lessonModel = {
 
     findByStudent: async (student_id) => {
         const [rows] = await db.query(
-            `SELECT l.*, u.full_name AS teacher_name 
+            `SELECT l.*, u.full_name AS teacher_name
              FROM lessons l
              JOIN users u ON l.teacher_id = u.id
-             WHERE l.student_id = ?
+             WHERE l.student_id = ? AND l.status != 'cancelled'
              ORDER BY l.lesson_date DESC`,
             [student_id]
         );
@@ -17,14 +17,22 @@ const lessonModel = {
 
     findByTeacher: async (teacher_id) => {
         const [rows] = await db.query(
-            `SELECT l.*, u.full_name AS student_name 
+            `SELECT l.*, u.full_name AS student_name
              FROM lessons l
              JOIN users u ON l.student_id = u.id
-             WHERE l.teacher_id = ?
+             WHERE l.teacher_id = ? AND l.status != 'cancelled'
              ORDER BY l.lesson_date DESC`,
             [teacher_id]
         );
         return rows;
+    },
+
+    findById: async (id) => {
+        const [rows] = await db.query(
+            'SELECT * FROM lessons WHERE id = ?',
+            [id]
+        );
+        return rows[0];
     },
 
     create: async (teacher_id, student_id, lesson_date) => {
@@ -43,15 +51,15 @@ const lessonModel = {
     },
 
     bookLesson: async (teacher_id, student_id, lesson_date) => {
-        const mysqlDate  = toMysqlDate(lesson_date);
+        const mysqlDate = toMysqlDate(lesson_date);
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
 
             const [existing] = await connection.query(
-                `SELECT id FROM lessons 
-                 WHERE teacher_id = ? AND lesson_date = ? 
-                 AND status = "scheduled" FOR UPDATE`,
+                `SELECT id FROM lessons
+                 WHERE teacher_id = ? AND lesson_date = ?
+                 AND status = 'scheduled' FOR UPDATE`,
                 [teacher_id, mysqlDate]
             );
 
@@ -76,10 +84,29 @@ const lessonModel = {
         }
     },
 
+    markSlotBooked: async (teacher_id, lesson_date) => {
+        const mysqlDate = toMysqlDate(lesson_date);
+        await db.query(
+            `UPDATE available_slots SET is_booked = TRUE
+             WHERE teacher_id = ? AND slot_date = ?`,
+            [teacher_id, mysqlDate]
+        );
+    },
+
+    releaseSlot: async (teacher_id, lesson_date) => {
+        const mysqlDate = toMysqlDate(lesson_date);
+        await db.query(
+            `UPDATE available_slots SET is_booked = FALSE
+             WHERE teacher_id = ? AND slot_date = ?`,
+            [teacher_id, mysqlDate]
+        );
+    },
+
     getSlotsByTeacher: async (teacher_id) => {
         const [rows] = await db.query(
-            `SELECT * FROM available_slots 
+            `SELECT * FROM available_slots
              WHERE teacher_id = ? AND is_booked = FALSE
+             AND slot_date > NOW()
              ORDER BY slot_date ASC`,
             [teacher_id]
         );
@@ -93,10 +120,7 @@ const lessonModel = {
             'SELECT id FROM available_slots WHERE teacher_id = ? AND slot_date = ?',
             [teacher_id, mysqlDate]
         );
-
-        if (existing.length > 0) {
-            return existing[0];
-        }
+        if (existing.length > 0) return existing[0];
 
         const [result] = await db.query(
             'INSERT INTO available_slots (teacher_id, slot_date) VALUES (?, ?)',
@@ -107,6 +131,15 @@ const lessonModel = {
             [result.insertId]
         );
         return rows[0];
+    },
+
+    autoCompleteExpiredLessons: async () => {
+        await db.query(
+            `UPDATE lessons
+             SET status = 'completed'
+             WHERE status = 'scheduled'
+             AND lesson_date < NOW() - INTERVAL 1 HOUR`
+        );
     },
 };
 

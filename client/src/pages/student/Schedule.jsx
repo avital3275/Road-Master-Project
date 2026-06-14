@@ -1,35 +1,38 @@
 import { useState, useEffect } from 'react';
-import useAuth                  from '../../hooks/useAuth';
-import StudentSidebar           from '../../components/StudentSidebar';
-import Loader                   from '../../components/Loader';
-import lessonService            from '../../services/lessonService';
-import userService              from '../../services/userService';
+import useAuth from '../../hooks/useAuth';
+import StudentSidebar from '../../components/StudentSidebar';
+import Loader from '../../components/Loader';
+import lessonService from '../../services/lessonService';
+import userService from '../../services/userService';
 import '../../styles/Dashboard.css';
+
+const REGIONS = ['', 'מרכז', 'צפון', 'דרום', 'ירושלים'];
 
 const Schedule = () => {
     const { token } = useAuth();
 
-    const [teachers,        setTeachers]        = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [selectedTeacher, setSelectedTeacher] = useState('');
-    const [slots,           setSlots]           = useState([]);
-    const [myLessons,       setMyLessons]       = useState([]);
-    const [loading,         setLoading]         = useState(false);
-    const [message,         setMessage]         = useState('');
-    const [error,           setError]           = useState('');
+    const [slots, setSlots] = useState([]);
+    const [myLessons, setMyLessons] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [regionFilter, setRegionFilter] = useState('');
 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 const [teachersData, lessonsData] = await Promise.all([
-                    userService.getTeachers(token),
+                    userService.getTeachers(token, regionFilter),
                     lessonService.getMyLessons(token),
                 ]);
                 setTeachers(Array.isArray(teachersData) ? teachersData : []);
-                setMyLessons(Array.isArray(lessonsData) ? lessonsData  : []);
+                setMyLessons(Array.isArray(lessonsData) ? lessonsData : []);
             } catch (err) { console.error(err); }
         };
         fetchInitialData();
-    }, [token]);
+    }, [token, regionFilter]);
 
     const fetchSlots = async (teacherId) => {
         setLoading(true);
@@ -60,39 +63,54 @@ const Schedule = () => {
             } else {
                 setError(data.message);
             }
-        } catch (err) {
+        } catch {
             setError('שגיאת תקשורת עם השרת');
         }
     };
 
+    const upcomingLessons = myLessons.filter(l =>
+        l.status === 'scheduled' && new Date(l.lesson_date) > new Date()
+    );
+
     return (
         <div className="page-container">
             <StudentSidebar />
-
             <main className="main-content">
                 <div className="page-header">
-                    <h1>📅 תיאום שיעורים</h1>
+                    <h1>תיאום שיעורים</h1>
                     <p>בחר מורה וצפה בשעות הפנויות שלו</p>
                 </div>
 
                 <div className="section">
-                    <h2 className="section-title">בחר מורה</h2>
-                    <select
-                        className="select-input"
-                        value={selectedTeacher}
-                        onChange={handleTeacherChange}
-                    >
-                        <option value="">— בחר מורה —</option>
-                        {teachers.map(t => (
-                            <option key={t.id} value={t.id}>
-                                {t.full_name} — רישיון {t.license_type}
-                            </option>
-                        ))}
-                    </select>
+                    <h2 className="section-title">סינון וחיפוש מורה</h2>
+                    <div className="filter-row">
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label>סינון לפי אזור</label>
+                            <select
+                                className="select-input"
+                                value={regionFilter}
+                                onChange={(e) => { setRegionFilter(e.target.value); setSelectedTeacher(''); setSlots([]); }}
+                            >
+                                <option value="">כל האזורים</option>
+                                {REGIONS.filter(Boolean).map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ flex: 2 }}>
+                            <label>בחר מורה</label>
+                            <select className="select-input" value={selectedTeacher} onChange={handleTeacherChange}>
+                                <option value="">— בחר מורה —</option>
+                                {teachers.map(t => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.full_name} — {t.region || 'לא צוין'} — רישיון {t.license_type}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {message && <div className="alert alert-success">{message}</div>}
-                {error   && <div className="alert alert-error">{error}</div>}
+                {error && <div className="alert alert-error">{error}</div>}
 
                 {selectedTeacher && (
                     <div className="section">
@@ -112,7 +130,7 @@ const Schedule = () => {
                                             })}
                                         </div>
                                         <div className="slot-time">
-                                            🕐 {new Date(slot.slot_date).toLocaleTimeString('he-IL', {
+                                            {new Date(slot.slot_date).toLocaleTimeString('he-IL', {
                                                 hour: '2-digit', minute: '2-digit',
                                             })}
                                         </div>
@@ -127,40 +145,25 @@ const Schedule = () => {
                 )}
 
                 <div className="section">
-                    <h2 className="section-title">השיעורים שלי</h2>
-                    {myLessons.length === 0 ? (
+                    <h2 className="section-title">השיעורים הקרובים שלי</h2>
+                    {upcomingLessons.length === 0 ? (
                         <div className="empty-state">
                             <span>📋</span>
-                            <p>אין שיעורים עדיין</p>
+                            <p>אין שיעורים מתוכננים קרובים</p>
                         </div>
                     ) : (
                         <div className="table-container">
                             <table>
                                 <thead>
-                                    <tr>
-                                        <th>תאריך</th>
-                                        <th>שעה</th>
-                                        <th>מורה</th>
-                                        <th>סטטוס</th>
-                                    </tr>
+                                    <tr><th>תאריך</th><th>שעה</th><th>מורה</th><th>סטטוס</th></tr>
                                 </thead>
                                 <tbody>
-                                    {myLessons.map(lesson => (
+                                    {upcomingLessons.map(lesson => (
                                         <tr key={lesson.id}>
                                             <td>{new Date(lesson.lesson_date).toLocaleDateString('he-IL')}</td>
                                             <td>{new Date(lesson.lesson_date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</td>
                                             <td>{lesson.teacher_name}</td>
-                                            <td>
-                                                <span className={`badge ${
-                                                    lesson.status === 'completed' ? 'badge-success' :
-                                                    lesson.status === 'cancelled' ? 'badge-danger'  :
-                                                    'badge-primary'
-                                                }`}>
-                                                    {lesson.status === 'completed' ? '✅ הושלם'  :
-                                                     lesson.status === 'cancelled' ? '❌ בוטל'   :
-                                                     '⏳ מתוכנן'}
-                                                </span>
-                                            </td>
+                                            <td><span className="badge badge-primary">מתוכנן</span></td>
                                         </tr>
                                     ))}
                                 </tbody>

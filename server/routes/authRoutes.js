@@ -1,7 +1,7 @@
-const express             = require('express');
-const router              = express.Router();
-const authController      = require('../controllers/authController');
-const validateMiddleware  = require('../middleware/validateMiddleware');
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const validateMiddleware = require('../middleware/validateMiddleware');
 
 router.post('/send-code',
     validateMiddleware.sendCode,

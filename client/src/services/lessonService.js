@@ -25,10 +25,10 @@ const lessonService = {
 
     addSlot: async (slot_date, token) => {
         const res = await fetch(`${BASE_URL}/lessons/slots`, {
-            method:  'POST',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization:  `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ slot_date }),
         });
@@ -37,10 +37,10 @@ const lessonService = {
 
     bookLesson: async (teacher_id, lesson_date, token) => {
         const res = await fetch(`${BASE_URL}/lessons`, {
-            method:  'POST',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization:  `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ teacher_id, lesson_date }),
         });
@@ -49,10 +49,10 @@ const lessonService = {
 
     updateLesson: async (id, status, notes, token) => {
         const res = await fetch(`${BASE_URL}/lessons/${id}`, {
-            method:  'PUT',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization:  `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status, notes }),
         });

@@ -6,8 +6,10 @@ CREATE TABLE users (
     full_name    VARCHAR(100)  NOT NULL,
     email        VARCHAR(100)  NOT NULL UNIQUE,
     password     VARCHAR(255)  NOT NULL,
+    phone        VARCHAR(15)   NULL,
+    region       ENUM('מרכז','צפון','דרום','ירושלים') NULL,
     role         ENUM('student', 'teacher') NOT NULL,
-    license_type VARCHAR(255)  DEFAULT 'B', 
+    license_type VARCHAR(255)  DEFAULT 'B',
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -52,4 +54,16 @@ CREATE TABLE available_slots (
     slot_date   DATETIME NOT NULL,
     is_booked   BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (teacher_id) REFERENCES users(id)
+);
+
+CREATE TABLE notifications (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    body        TEXT NOT NULL,
+    type        ENUM('cancellation','report','general') DEFAULT 'general',
+    is_read     BOOLEAN DEFAULT FALSE,
+    file_path   VARCHAR(255) NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

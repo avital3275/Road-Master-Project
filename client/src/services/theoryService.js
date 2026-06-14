@@ -11,10 +11,10 @@ const theoryService = {
 
     submitExam: async (score, total, token) => {
         const res = await fetch(`${BASE_URL}/theory/exam`, {
-            method:  'POST',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization:  `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ score, total }),
         });
@@ -54,16 +54,16 @@ const theoryService = {
 
     addQuestion: async (formData, token) => {
         const res = await fetch(`${BASE_URL}/theory/question`, {
-            method:  'POST',
+            method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
-            body:    formData,
+            body: formData,
         });
         return res.json();
     },
 
     deleteQuestion: async (id, token) => {
         const res = await fetch(`${BASE_URL}/theory/question/${id}`, {
-            method:  'DELETE',
+            method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` },
         });
         return res.json();
